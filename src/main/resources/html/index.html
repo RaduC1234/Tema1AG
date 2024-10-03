@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Viewer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        #controls {
+            margin-bottom: 20px;
+        }
+        #graph {
+            border: 1px solid #ccc;
+            width: 600px;
+            height: 400px;
+            display: inline-block;
+        }
+        button, input {
+            padding: 10px;
+            margin-right: 5px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border: 1px solid #999;
+        }
+        button.active {
+            background-color: #007BFF;
+            color: white;
+        }
+        #form {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Controls for the graph -->
+<div id="controls">
+    <button id="undirectedBtn" class="active">Undirected</button>
+    <button id="directedBtn">Directed</button>
+</div>
+
+<!-- Node/Edge input form -->
+<div id="form">
+    <label for="addNodeInput">Add Node:</label>
+    <input type="number" id="addNodeInput" placeholder="Node ID" min="0">
+    <button id="addNodeBtn">Add Node</button>
+
+    <label for="addEdgeSourceInput">Add Edge (source-target):</label>
+    <input type="number" id="addEdgeSourceInput" placeholder="Source" min="0">
+    <input type="number" id="addEdgeTargetInput" placeholder="Target" min="0">
+    <button id="addEdgeBtn">Add Edge</button>
+
+    <label for="removeNodeInput">Remove Node:</label>
+    <input type="number" id="removeNodeInput" placeholder="Node ID" min="0">
+    <button id="removeNodeBtn">Remove Node</button>
+</div>
+
+<div id="graph"></div>
+
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<script>
+    let graphData = {
+        nodes: [
+            { id: 0 },
+            { id: 1 },
+            { id: 2 },
+            { id: 3 },
+            { id: 4 },
+            { id: 5 },
+        ],
+        links: [
+            { source: 0, target: 1 },
+            { source: 0, target: 2 },
+            { source: 0, target: 4 },
+            { source: 0, target: 5 },
+            { source: 1, target: 4 },
+            { source: 1, target: 5 },
+            { source: 2, target: 3 },
+            { source: 2, target: 4 },
+            { source: 3, target: 4 },
+            { source: 4, target: 5 },
+        ]
+    };
+
+    const width = 600;
+    const height = 400;
+    const svg = d3.select("#graph")
+        .append("svg")
+        .attr("width", width)
+        .attr("height", height);
+
+    let linkForce = d3.forceLink(graphData.links).id(d => d.id).distance(100);
+    let simulation = d3.forceSimulation(graphData.nodes)
+        .force("link", linkForce)
+        .force("charge", d3.forceManyBody().strength(-400))
+        .force("center", d3.forceCenter(width / 2, height / 2));
+
+    let link = svg.append("g")
+        .selectAll("line")
+        .data(graphData.links)
+        .enter()
+        .append("line")
+        .attr("stroke", "#999")
+        .attr("stroke-width", 2);
+
+    let node = svg.append("g")
+        .selectAll("circle")
+        .data(graphData.nodes)
+        .enter()
+        .append("circle")
+        .attr("r", 20)
+        .attr("fill", "#fff")
+        .attr("stroke", "#333")
+        .attr("stroke-width", 2)
+        .call(d3.drag()
+            .on("start", dragStarted)
+            .on("drag", dragged)
+            .on("end", dragEnded));
+
+    let label = svg.append("g")
+        .selectAll("text")
+        .data(graphData.nodes)
+        .enter()
+        .append("text")
+        .text(d => d.id)
+        .attr("font-size", 15)
+        .attr("dy", ".35em")
+        .attr("text-anchor", "middle");
+
+    simulation.on("tick", () => {
+        link
+            .attr("x1", d => d.source.x)
+            .attr("y1", d => d.source.y)
+            .attr("x2", d => d.target.x)
+            .attr("y2", d => d.target.y);
+
+        node
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y);
+
+        label
+            .attr("x", d => d.x)
+            .attr("y", d => d.y);
+    });
+
+    function dragStarted(event, d) {
+        if (!event.active) simulation.alphaTarget(0.3).restart();
+        d.fx = d.x;
+        d.fy = d.y;
+    }
+
+    function dragged(event, d) {
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+
+    function dragEnded(event, d) {
+        if (!event.active) simulation.alphaTarget(0);
+        d.fx = null;
+        d.fy = null;
+    }
+
+    // Add Node button functionality
+    document.getElementById("addNodeBtn").onclick = () => {
+        const nodeId = +document.getElementById("addNodeInput").value;
+        if (!isNaN(nodeId) && !graphData.nodes.find(n => n.id === nodeId)) {
+            graphData.nodes.push({ id: nodeId });
+            updateGraph();
+        }
+    };
+
+    // Add Edge button functionality
+    document.getElementById("addEdgeBtn").onclick = () => {
+        const source = +document.getElementById("addEdgeSourceInput").value;
+        const target = +document.getElementById("addEdgeTargetInput").value;
+        if (!isNaN(source) && !isNaN(target)) {
+            graphData.links.push({ source, target });
+            updateGraph();
+        }
+    };
+
+    // Remove Node button functionality
+    document.getElementById("removeNodeBtn").onclick = () => {
+        const nodeId = +document.getElementById("removeNodeInput").value;
+        if (!isNaN(nodeId)) {
+            graphData.nodes = graphData.nodes.filter(n => n.id !== nodeId);
+            graphData.links = graphData.links.filter(l => l.source.id !== nodeId && l.target.id !== nodeId);
+            updateGraph();
+        }
+    };
+
+    // Update the graph with new nodes/links
+    function updateGraph() {
+        // Update the force simulation
+        simulation.nodes(graphData.nodes);
+        linkForce.links(graphData.links);
+
+        // Update links
+        link = link.data(graphData.links);
+        link.exit().remove();
+        link = link.enter().append("line")
+            .attr("stroke", "#999")
+            .attr("stroke-width", 2)
+            .merge(link);
+
+        // Update nodes
+        node = node.data(graphData.nodes);
+        node.exit().remove();
+        node = node.enter().append("circle")
+            .attr("r", 20)
+            .attr("fill", "#fff")
+            .attr("stroke", "#333")
+            .attr("stroke-width", 2)
+            .call(d3.drag()
+                .on("start", dragStarted)
+                .on("drag", dragged)
+                .on("end", dragEnded))
+            .merge(node);
+
+        // Update labels
+        label = label.data(graphData.nodes);
+        label.exit().remove();
+        label = label.enter().append("text")
+            .text(d => d.id)
+            .attr("font-size", 15)
+            .attr("dy", ".35em")
+            .attr("text-anchor", "middle")
+            .merge(label);
+
+        simulation.alpha(1).restart();  // Restart simulation after updates
+    }
+
+    // Toggle between Directed and Undirected graph
+    document.getElementById("undirectedBtn").onclick = () => {
+        link.attr("marker-end", null);  // Remove arrowheads for undirected
+    };
+
+    document.getElementById("directedBtn").onclick = () => {
+        link.attr("marker-end", "url(#arrowhead)");  // Add arrowheads for directed
+        svg.append("defs").append("marker")
+            .attr("id", "arrowhead")
+            .attr("viewBox", "0 -5 10 10")
+            .attr("refX", 15)
+            .attr("refY", 0)
+            .attr("markerWidth", 6)
+            .attr("markerHeight", 6)
+            .attr("orient", "auto")
+            .append("path")
+            .attr("d", "M0,-5L10,0L0,5")
+            .attr("fill", "#333");
+    };
+</script>
+
+</body>
+</html>
