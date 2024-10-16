@@ -12,6 +12,7 @@
 <div id="controls">
     <button id="undirectedBtn" class="active">Undirected</button>
     <button id="directedBtn">Directed</button>
+    <button id="openGameBtn">Launch Game</button>
 </div>
 
 <!-- Node/Edge input form -->
@@ -31,6 +32,12 @@
 </div>
 
 <div id="graph"></div>
+
+<script>
+    document.getElementById("openGameBtn").onclick = function() {
+        window.open('game.html', '_blank');
+    };
+</script>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <script src="index.js"></script>

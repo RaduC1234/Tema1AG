@@ -10,11 +10,13 @@ const svg = d3.select("#graph")
     .attr("width", width)
     .attr("height", height);
 
-let linkForce = d3.forceLink(graphData.links).id(d => d.id).distance(100);
+let linkForce = d3.forceLink(graphData.links).id(d => d.id).distance(150);
 let simulation = d3.forceSimulation(graphData.nodes)
     .force("link", linkForce)
-    .force("charge", d3.forceManyBody().strength(-400))
-    .force("center", d3.forceCenter(width / 2, height / 2));
+    .force("charge", d3.forceManyBody().strength(-100))
+    .force("center", d3.forceCenter(width / 2, height / 2))
+    .force("x", d3.forceX(width / 2).strength(0.05))
+    .force("y", d3.forceY(height / 2).strength(0.05));
 
 const arrowheadMarker = svg.append("defs").append("marker")
     .attr("id", "arrowhead")
