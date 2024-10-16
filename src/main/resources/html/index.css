@@ -1,0 +1,26 @@
+body {
+    font-family: Arial, sans-serif;
+}
+#controls {
+    margin-bottom: 20px;
+}
+#graph {
+    border: 1px solid #ccc;
+    width: 600px;
+    height: 400px;
+    display: inline-block;
+}
+button, input {
+    padding: 10px;
+    margin-right: 5px;
+    cursor: pointer;
+    background-color: #f0f0f0;
+    border: 1px solid #999;
+}
+button.active {
+    background-color: #007BFF;
+    color: white;
+}
+#form {
+    margin-top: 10px;
+}
