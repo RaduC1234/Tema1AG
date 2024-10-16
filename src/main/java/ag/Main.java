@@ -1,5 +1,6 @@
 package ag;
 
+import com.google.gson.Gson;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
@@ -13,6 +14,10 @@ import javafx.scene.web.WebView;
 import javafx.stage.Stage;
 import netscape.javascript.JSObject;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.net.URL;
 import java.util.Objects;
 
@@ -44,6 +49,7 @@ public class Main extends Application {
 
                 JSObject window = (JSObject) webEngine.executeScript("window");
                 window.setMember("Platform", this);
+                window.setMember("Matrix", new MatrixHandler());
             }
         });
         webEngine.reload();
@@ -51,14 +57,6 @@ public class Main extends Application {
 
     public void print(String text) {
         System.out.println(text);
-    }
-
-    public int[][] getMatrixFromFile(String filename) {
-        return null;
-    }
-
-    public void saveMatrixToFile(String filename, int[][] matrix) {
-
     }
 
     public static class WebModule extends Pane {
@@ -92,5 +90,31 @@ public class Main extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    private class MatrixHandler {
+
+        private final Gson gson = new Gson();
+
+        public String loadMatrixFromFile(String filePath) {
+            try (FileReader reader = new FileReader(filePath)) {
+                double[][] matrix = gson.fromJson(reader, double[][].class);
+                return gson.toJson(matrix);
+            } catch (IOException e) {
+                e.printStackTrace();
+                return "Error: Could not load matrix.";
+            }
+        }
+
+        public boolean saveMatrixToFile(String filePath, String matrixJson) {
+            try (FileWriter writer = new FileWriter(new File(filePath))) {
+                double[][] matrix = gson.fromJson(matrixJson, double[][].class);
+                gson.toJson(matrix, writer);
+                return true;
+            } catch (IOException e) {
+                e.printStackTrace();
+                return false;
+            }
+        }
     }
 }
